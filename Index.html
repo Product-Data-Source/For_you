@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>จดหมายก่อนฟ้าสาง</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500&family=Pridi:wght@300;400&display=swap">
+<style>
+/* Layout: one left-aligned reading column with a sticky clock time in the margin.
+   The fixed sky behind it runs from night to dawn as the page scrolls. */
+:root{
+  --c0:#0c0f23;
+  --c1:#1a1740;
+  --c2:#3b1d4e;
+  --c3:#9c3a56;
+  --ember:#ff9f7a;
+  --dawn-a:#f2b48a;
+  --dawn-b:#ffdcb8;
+  --ink:#2b1230;
+  --fg:#f5eefb;
+  --fg-soft:rgba(245,238,251,.84);
+  --line:rgba(245,238,251,.3);
+  --m1:#c9506b;
+  --m2:#e8773f;
+  --m3:#7a3563;
+  --f-display:'Pridi','Noto Serif Thai','Thonburi',serif;
+  --f-body:'IBM Plex Sans Thai','Noto Sans Thai','Thonburi',system-ui,sans-serif;
+  --bg:var(--c0);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--fg);
+  font:300 1.0625rem/1.85 var(--f-body);
+}
+/* paints the phone's top inset so text never scrolls up under the status bar */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0 0 auto;
+  height:env(safe-area-inset-top,0px);
+  background:var(--bg);
+  z-index:10;
+}
+
+/* ---------- sky ---------- */
+.sky{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.sky canvas{position:absolute;inset:0;width:100%;height:100%}
+.glow{
+  position:absolute;
+  left:50%;
+  bottom:0;
+  width:150vmax;
+  height:150vmax;
+  margin-left:-75vmax;
+  margin-bottom:-75vmax;
+  border-radius:50%;
+  background:radial-gradient(closest-side,rgba(255,150,110,.55),rgba(224,96,110,.28) 38%,rgba(224,96,110,0) 100%);
+  opacity:0;
+  will-change:transform,opacity;
+}
+.moon{
+  position:absolute;
+  top:calc(64px + env(safe-area-inset-top,0px));
+  right:calc(22px + env(safe-area-inset-right,0px));
+  will-change:transform,opacity;
+}
+.moon i{
+  display:block;
+  width:46px;
+  height:46px;
+  border-radius:50%;
+  box-shadow:inset -13px -4px 0 0 #f1e4cf;
+  transform:rotate(-18deg);
+  filter:drop-shadow(0 0 10px rgba(241,228,207,.35));
+}
+
+/* ---------- clock ---------- */
+.clock{
+  position:fixed;
+  z-index:11;
+  top:calc(12px + env(safe-area-inset-top,0px));
+  left:calc(16px + env(safe-area-inset-left,0px));
+  display:flex;
+  align-items:baseline;
+  gap:.65rem;
+  padding:.4rem .9rem;
+  border-radius:999px;
+  background:rgba(12,15,35,.62);
+  border:1px solid var(--line);
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
+  font:400 .8125rem/1.5 var(--f-body);
+  color:var(--fg);
+  font-variant-numeric:tabular-nums;
+  pointer-events:none;
+}
+.clock b{font-weight:500}
+.clock span{color:var(--fg-soft)}
+
+/* ---------- structure ---------- */
+.page{position:relative;z-index:1}
+.wrap{
+  width:100%;
+  max-width:62rem;
+  margin-inline:auto;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.beat{
+  padding-block:clamp(5rem,16vh,9rem);
+  padding-block:clamp(5rem,16svh,9rem);
+}
+.grid{display:grid;gap:1rem 3rem;grid-template-columns:minmax(0,1fr)}
+.col{min-width:0;max-width:40rem}
+.stamp{
+  margin:0;
+  align-self:start;
+  font:400 .8125rem/1.5 var(--f-body);
+  color:var(--fg-soft);
+  font-variant-numeric:tabular-nums;
+}
+@media (min-width:56rem){
+  .grid{grid-template-columns:9rem minmax(0,1fr)}
+  .stamp{position:sticky;top:calc(5.5rem + env(safe-area-inset-top,0px));padding-top:.55rem}
+  .col-solo{grid-column:2}
+}
+
+/* ---------- hero ---------- */
+.hero{
+  padding-block:clamp(5.5rem,14vh,8rem) clamp(4rem,12vh,7rem);
+  padding-block:clamp(5.5rem,14svh,8rem) clamp(4rem,12svh,7rem);
+}
+.eyebrow{margin:0 0 .25rem;font-weight:400;font-size:.9375rem;color:var(--fg-soft)}
+.hero-title{
+  margin:0;
+  font-family:var(--f-display);
+  font-weight:300;
+  font-size:clamp(4.25rem,21vw,10rem);
+  line-height:1.35;
+  will-change:transform,opacity;
+}
+.lede{max-width:30rem;margin:1.25rem 0 0;color:var(--fg-soft)}
+.cue{display:flex;align-items:center;gap:.9rem;margin:2.75rem 0 0;font-size:.9375rem;color:var(--fg-soft)}
+.cue-line{position:relative;display:block;width:1px;height:2.75rem;background:var(--line);overflow:hidden}
+.cue-line::after{
+  content:"";
+  position:absolute;
+  left:0;
+  top:-40%;
+  width:1px;
+  height:40%;
+  background:var(--ember);
+  animation:cue 2s ease-in-out infinite;
+}
+@keyframes cue{0%{top:-40%}100%{top:100%}}
+
+/* ---------- text styles ---------- */
+.label{margin:0 0 2rem;font-weight:400;font-size:1rem;line-height:1.6;color:var(--fg-soft)}
+.statement{
+  margin:0;
+  font-family:var(--f-display);
+  font-weight:300;
+  font-size:clamp(1.6rem,5.2vw,2.5rem);
+  line-height:1.65;
+}
+.fill .w{opacity:.3;transition:opacity .4s ease}
+.fill .w.on{opacity:1}
+.admits{list-style:none;margin:0;padding:0;display:grid;gap:clamp(1.5rem,5vw,2.5rem)}
+.admits li{
+  font-family:var(--f-display);
+  font-weight:300;
+  font-size:clamp(1.5rem,4.8vw,2.25rem);
+  line-height:1.55;
+}
+.note{margin:2.25rem 0 0;max-width:30rem;color:var(--fg-soft)}
+.pull{
+  margin:0;
+  font-family:var(--f-display);
+  font-weight:300;
+  font-size:clamp(2rem,7.2vw,3.5rem);
+  line-height:1.55;
+  text-wrap:balance;
+}
+.pull em{font-style:normal;color:var(--ember)}
+.body{margin:2rem 0 0;max-width:32rem;color:var(--fg-soft)}
+
+/* ---------- promises ---------- */
+.promises{
+  --gap:clamp(1.6rem,5vw,2.4rem);
+  --tm:calc((1.55em - 28px) / 2);
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:grid;
+  gap:var(--gap);
+}
+.promise{
+  position:relative;
+  display:grid;
+  grid-template-columns:28px minmax(0,1fr);
+  gap:1.1rem;
+  align-items:start;
+  font-size:clamp(1.25rem,4.2vw,1.7rem);
+  line-height:1.55;
+}
+.promise p{margin:0;font-family:var(--f-display);font-weight:300}
+.tick{width:28px;height:28px;margin-top:var(--tm);overflow:visible}
+.tick circle{fill:none;stroke:var(--ember);stroke-width:1.5}
+.tick path{
+  fill:none;
+  stroke:var(--ember);
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  stroke-dasharray:1;
+  stroke-dashoffset:0;
+  transition:stroke-dashoffset .8s ease calc(var(--d,0s) + .25s);
+}
+.promise:not(:last-child)::after{
+  content:"";
+  position:absolute;
+  left:13.25px;
+  width:1.5px;
+  top:calc(var(--tm) + 34px);
+  bottom:calc(6px - var(--gap) - var(--tm));
+  background:var(--line);
+  transform-origin:top;
+  transition:transform .9s ease calc(var(--d,0s) + .5s);
+}
+html.js .promise.pending .tick path{stroke-dashoffset:1}
+html.js .promise.pending::after{transform:scaleY(0)}
+
+/* ---------- reveal on scroll ---------- */
+.reveal{
+  transition:opacity .9s ease var(--d,0s),transform .9s cubic-bezier(.2,.7,.2,1) var(--d,0s);
+}
+html.js .reveal.pending{opacity:0;transform:translate3d(0,26px,0)}
+
+/* ---------- dawn ---------- */
+.dawn{
+  position:relative;
+  color:var(--ink);
+  padding-block:clamp(11rem,44vh,24rem) clamp(4.5rem,12vh,7rem);
+  padding-block:clamp(11rem,44svh,24rem) clamp(4.5rem,12svh,7rem);
+  background:linear-gradient(to bottom,rgba(242,180,138,0) 0,var(--dawn-a) 28%,var(--dawn-b) 100%);
+}
+.sun{
+  position:absolute;
+  top:clamp(1rem,4vh,3rem);
+  right:clamp(1.5rem,12vw,10rem);
+  width:clamp(7rem,30vw,13rem);
+  max-width:100%;
+  aspect-ratio:1;
+  border-radius:50%;
+  background:radial-gradient(circle,#fff3da 0 34%,rgba(255,200,144,.95) 35%,rgba(255,160,112,0) 70%);
+  opacity:var(--rise,1);
+  transform:translate3d(0,calc((1 - var(--rise,1)) * 6rem),0);
+}
+.dawn .stamp{color:rgba(43,18,48,.74)}
+.dawn-title{
+  margin:0;
+  font-family:var(--f-display);
+  font-weight:300;
+  font-size:clamp(2.4rem,9.5vw,4.75rem);
+  line-height:1.45;
+  text-wrap:balance;
+}
+.dawn-lede{margin:1.25rem 0 0;max-width:28rem;color:rgba(43,18,48,.82)}
+.cta{position:relative;display:flex;flex-wrap:wrap;gap:.9rem;margin-top:2rem}
+.btn{
+  font:500 1.0625rem/1 var(--f-body);
+  min-height:3.25rem;
+  padding:0 1.7rem;
+  border-radius:999px;
+  border:1.5px solid var(--ink);
+  cursor:pointer;
+  transition:transform .2s ease,background .25s ease,color .25s ease;
+}
+.btn-main{background:var(--ink);color:#fff4e6}
+.btn-ghost{background:transparent;color:var(--ink)}
+.btn:active{transform:scale(.97)}
+.btn:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.btn-main[disabled]{cursor:default;transform:none}
+.reply{
+  margin:1.5rem 0 0;
+  min-height:3.6em;
+  max-width:30rem;
+  font-family:var(--f-display);
+  font-weight:300;
+  font-size:1.25rem;
+  line-height:1.6;
+}
+.motes{position:absolute;inset:0;pointer-events:none}
+.mote{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:var(--sz);
+  height:var(--sz);
+  border-radius:50%;
+  background:var(--mc);
+  opacity:0;
+  animation:mote 1.6s cubic-bezier(.2,.7,.2,1) var(--dl) forwards;
+}
+@keyframes mote{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}
+  15%{opacity:1}
+  100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .fill .w{opacity:1}
+}
+</style>
+<style>:root{padding-block:env(safe-area-inset-top,0px) env(safe-area-inset-bottom,0px)}</style>
+</head>
+<body>
+
+<div class="sky" aria-hidden="true">
+  <canvas id="stars"></canvas>
+  <div class="glow" id="glow"></div>
+  <div class="moon" id="moon"><i></i></div>
+</div>
+
+<div class="clock" aria-hidden="true"><b id="clockTime">23:48 น.</b><span id="clockPhase">ยังไม่ได้นอน</span></div>
+
+<main class="page" lang="th">
+
+  <section class="beat hero">
+    <div class="wrap">
+      <div class="grid" data-min="-12">
+        <div class="col col-solo">
+          <p class="eyebrow">จากผม ถึงคุณ</p>
+          <h1 class="hero-title">ขอโทษครับ</h1>
+          <p class="lede">เขียนไว้ตอนที่ยังไม่ได้นอน เลื่อนลงช้าๆ แล้วอ่านไปทีละช่วงนะครับ</p>
+          <p class="cue"><span class="cue-line" aria-hidden="true"></span>เลื่อนลง</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="beat">
+    <div class="wrap">
+      <div class="grid" data-min="12">
+        <p class="stamp"><time datetime="00:12">00:12 น.</time></p>
+        <div class="col">
+          <p class="statement fill">ผมรู้สึกว่าผมทำคุณเสียใจหลายครั้งและง่ายมาก ซึ่งผมไม่ได้ตั้งใจจะให้เป็นแบบนั้นเลย บางทีก็คิดว่าเพราะเป็นการที่คุณมีผมในชีวิต รึเปล่าเลยทำให้คุณรู้ไม่ดีบ่อยกว่าตอนไม่มีผม</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="beat">
+    <div class="wrap">
+      <div class="grid" data-min="65">
+        <p class="stamp"><time datetime="01:05">01:05 น.</time></p>
+        <div class="col">
+          <h2 class="label reveal">สิ่งที่ผมรู้ว่าผมผิด</h2>
+          <ul class="admits stack">
+            <li class="reveal">ผมติดอธิบาย</li>
+            <li class="reveal">การใช้คำของผมมันทำคุณตีความไปในแง่อื่นได้ง่าย</li>
+            <li class="reveal">การดูแลเอาใจใส่ไม่ดีพอ</li>
+          </ul>
+          <p class="note reveal">ทั้งสามข้อเป็นความผิดของผมแต่เพียงผู้เดียว</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="beat">
+    <div class="wrap">
+      <div class="grid" data-min="150">
+        <p class="stamp"><time datetime="02:30">02:30 น.</time></p>
+        <div class="col">
+          <div class="drift">
+            <blockquote class="pull reveal">ในเมื่อคุณมีผมในชีวิตแล้ว คุณต้อง<em>มีความสุขมากกว่าตอนที่ไม่มีผม</em></blockquote>
+          </div>
+          <p class="body reveal">คุณจะงี่เง่าหรือเอาแต่ใจยังไงก็ได้เมื่ออยู่กับผม สิ่งเหล่านี้คุณทำได้เต็มที่และไม่ต้องกลัวว่าผมจะเปลี่ยนไปไหน วันที่โลกทั้งใบใจร้ายกับคุณแล้วไม่มีที่ลงก็เอามาระบายกับผมได้เต็มที่ผมจะได้เอาไปลงกับโลกต่อ ซึ่งเพราะผมเข้าใจความรู้สึกว่าคุณเป็นคนเซนซิทีฟและแพนิคง่ายผมถึงต้องถนอมความรู้สึกคุณมากๆและก็เคยบอกแล้วว่าผมมั่นคงในอารมณ์และความรู้สึกมากพอที่จะรักใครสักคนในชีวิตจริงๆ คุณเคยบอกว่าจะเสียคนเพราะผมตามใจ แต่เสียคนยังไงคุณก็คือแฟนผม ผมก็จะตามใจต่อไปตราบเท่าที่มันทำให้คุณมีความสุขและสบายใจ </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="beat">
+    <div class="wrap">
+      <div class="grid" data-min="250">
+        <p class="stamp"><time datetime="04:10">04:10 น.</time></p>
+        <div class="col">
+          <h2 class="label reveal">สิ่งที่ผมจะทำต่อจากนี้</h2>
+          <ul class="promises stack">
+            <li class="promise reveal">
+              <svg class="tick" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12.5"/><path pathLength="1" d="M8.5 14.5l4 4 7-8.5"/></svg>
+              <p>งดอธิบายยาวๆ</p>
+            </li>
+            <li class="promise reveal">
+              <svg class="tick" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12.5"/><path pathLength="1" d="M8.5 14.5l4 4 7-8.5"/></svg>
+              <p>รับฟังอย่างเข้าใจ</p>
+            </li>
+            <li class="promise reveal">
+              <svg class="tick" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12.5"/><path pathLength="1" d="M8.5 14.5l4 4 7-8.5"/></svg>
+              <p>ถามก่อนเดาใจ</p>
+            </li>
+            <li class="promise reveal">
+              <svg class="tick" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12.5"/><path pathLength="1" d="M8.5 14.5l4 4 7-8.5"/></svg>
+              <p>ดูแลเอาใจใส่ให้ดีขึ้น</p>
+            </li>
+          </ul>
+          <p class="note reveal">ซึ่งสิ่งเหล่านี้ บางอย่างมันคือสิ่งที่ผมขาดหายไปโดยไม่รู้ตัว</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dawn" id="dawn">
+    <div class="sun" id="sun" aria-hidden="true"></div>
+    <div class="wrap">
+      <div class="grid" data-min="372">
+        <p class="stamp"><time datetime="06:12">06:12 น.</time></p>
+        <div class="col stack">
+          <h2 class="dawn-title reveal">ยังอยากได้ดอกไม้อยู่ไหม</h2>
+          <p class="dawn-lede reveal">ไม่ต้องรีบตอบก็ได้ แต่ถ้าพร้อมแล้วกดได้เลย</p>
+          <div class="cta reveal">
+            <button class="btn btn-main" id="btnMain" type="button">อยากได้</button>
+            <button class="btn btn-ghost" id="btnAlt" type="button">ไม่อยากได้</button>
+            <div class="motes" id="motes" aria-hidden="true"></div>
+          </div>
+          <p class="reply" id="reply" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  root.classList.add('js');
+
+  function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+  function smooth(a, b, v) { var t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); }
+
+  /* sky colour stops are read from the tokens in :root */
+  var cs = getComputedStyle(root);
+  function tok(name) {
+    var h = cs.getPropertyValue(name).trim().replace('#', '');
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+  var stops = [[0, tok('--c0')], [0.3, tok('--c1')], [0.62, tok('--c2')], [1, tok('--c3')]];
+  function skyColor(p) {
+    for (var i = 1; i < stops.length; i++) {
+      if (p <= stops[i][0]) {
+        var a = stops[i - 1], b = stops[i], t = (p - a[0]) / (b[0] - a[0]);
+        var c = [0, 1, 2].map(function (k) { return Math.round(a[1][k] + (b[1][k] - a[1][k]) * t); });
+        return 'rgb(' + c.join(',') + ')';
+      }
+    }
+    return 'rgb(' + stops[stops.length - 1][1].join(',') + ')';
+  }
+
+  var elMoon = document.getElementById('moon');
+  var elGlow = document.getElementById('glow');
+  var elTime = document.getElementById('clockTime');
+  var elPhase = document.getElementById('clockPhase');
+  var heroT = document.querySelector('.hero-title');
+  var drifts = [].slice.call(document.querySelectorAll('.drift'));
+  var anchors = [].slice.call(document.querySelectorAll('[data-min]'));
+  var dawn = document.getElementById('dawn');
+  var sun = document.getElementById('sun');
+
+  /* ---------- word-by-word reading highlight ---------- */
+  var fills = [];
+  var seg = null;
+  try { seg = new Intl.Segmenter('th', { granularity: 'word' }); } catch (e) { seg = null; }
+  if (seg) {
+    [].forEach.call(document.querySelectorAll('.fill'), function (el) {
+      var text = el.textContent.trim();
+      el.textContent = '';
+      var words = [];
+      var it = seg.segment(text)[Symbol.iterator]();
+      for (var r = it.next(); !r.done; r = it.next()) {
+        var s = r.value;
+        if (s.isWordLike) {
+          var sp = document.createElement('span');
+          sp.className = 'w';
+          sp.textContent = s.segment;
+          el.appendChild(sp);
+          words.push(sp);
+        } else {
+          el.appendChild(document.createTextNode(s.segment));
+        }
+      }
+      fills.push({ el: el, words: words, lit: -1 });
+    });
+  }
+
+  /* ---------- reveal when scrolled into view ---------- */
+  [].forEach.call(document.querySelectorAll('.stack'), function (g) {
+    [].forEach.call(g.querySelectorAll('.reveal'), function (el, i) {
+      el.style.setProperty('--d', (i * 0.14).toFixed(2) + 's');
+    });
+  });
+  if (!reduce && 'IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) {
+          en.target.classList.remove('pending');
+          io.unobserve(en.target);
+        }
+      });
+    }, { threshold: 0.2, rootMargin: '0px 0px -6% 0px' });
+    [].forEach.call(document.querySelectorAll('.reveal'), function (el) {
+      if (el.getBoundingClientRect().top > window.innerHeight * 0.92) {
+        el.classList.add('pending');
+        io.observe(el);
+      }
+    });
+  }
+
+  /* ---------- stars ---------- */
+  var cv = document.getElementById('stars');
+  var ctx = cv.getContext('2d');
+  var stars = [];
+  for (var i = 0; i < 110; i++) {
+    stars.push({ x: Math.random(), y: Math.random(), r: Math.random() * 1.3 + 0.3, ph: Math.random() * 6.28, sp: 0.6 + Math.random() * 1.4, b: 0.35 + Math.random() * 0.65 });
+  }
+  var dpr = Math.min(2, window.devicePixelRatio || 1);
+  var W = 0, H = 0, starA = 1, cleared = false, sy = 0;
+  function sizeCanvas() {
+    var w = cv.clientWidth, h = cv.clientHeight;
+    if (w === W && h === H) return;
+    W = w; H = h;
+    cv.width = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function drawStars(t) {
+    ctx.clearRect(0, 0, W, H);
+    if (starA < 0.02) return;
+    ctx.fillStyle = '#fff4e6';
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      var tw = reduce ? 1 : 0.6 + 0.4 * Math.sin(t / 1000 * s.sp + s.ph);
+      var yy = reduce ? s.y * H : (((s.y * H - sy * 0.06 * s.r) % H) + H) % H;
+      ctx.globalAlpha = starA * s.b * tw;
+      ctx.beginPath();
+      ctx.arc(s.x * W, yy, s.r, 0, 6.283);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  function loop(t) {
+    if (!document.hidden) {
+      if (starA >= 0.02) { drawStars(t); cleared = false; }
+      else if (!cleared) { ctx.clearRect(0, 0, W, H); cleared = true; }
+    }
+    requestAnimationFrame(loop);
+  }
+
+  /* ---------- clock ---------- */
+  function minutesAt(y, vh) {
+    var focus = y + vh * 0.45;
+    var pts = anchors.map(function (a) {
+      return { y: a.getBoundingClientRect().top + y, t: +a.getAttribute('data-min') };
+    });
+    if (focus <= pts[0].y) return pts[0].t;
+    for (var i = 1; i < pts.length; i++) {
+      if (focus <= pts[i].y) {
+        var a = pts[i - 1], b = pts[i];
+        return a.t + (b.t - a.t) * (focus - a.y) / (b.y - a.y);
+      }
+    }
+    return pts[pts.length - 1].t;
+  }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  var lastTime = '', lastPhase = '';
+  function setClock(mins) {
+    var m = ((Math.round(mins) % 1440) + 1440) % 1440;
+    var txt = pad(Math.floor(m / 60)) + ':' + pad(m % 60) + ' น.';
+    var phase = mins < 120 ? 'ยังไม่ได้นอน' : mins < 270 ? 'ดึกมากแล้ว' : mins < 345 ? 'ใกล้สว่าง' : 'เช้าแล้ว';
+    if (txt !== lastTime) { elTime.textContent = txt; lastTime = txt; }
+    if (phase !== lastPhase) { elPhase.textContent = phase; lastPhase = phase; }
+  }
+
+  /* ---------- one scroll pass ---------- */
+  var ticking = false;
+  function update() {
+    ticking = false;
+    var y = window.pageYOffset || 0;
+    var vh = window.innerHeight;
+    sy = y;
+    var max = Math.max(1, document.documentElement.scrollHeight - vh);
+    var p = clamp(y / max, 0, 1);
+
+    root.style.setProperty('--bg', skyColor(p));
+
+    var g = smooth(0.15, 0.9, p);
+    elGlow.style.transform = 'translate3d(0,' + ((1 - g) * 60).toFixed(2) + 'vmax,0)';
+    elGlow.style.opacity = (0.1 + 0.9 * g).toFixed(3);
+
+    var m = smooth(0.04, 0.42, p);
+    elMoon.style.transform = 'translate3d(0,' + (reduce ? 0 : (m * 38).toFixed(2)) + 'vh,0)';
+    elMoon.style.opacity = (1 - m).toFixed(3);
+
+    starA = 1 - smooth(0.38, 0.8, p);
+    if (reduce) drawStars(0);
+
+    setClock(minutesAt(y, vh));
+
+    if (!reduce) {
+      heroT.style.transform = 'translate3d(0,' + (y * 0.2).toFixed(1) + 'px,0)';
+      heroT.style.opacity = (1 - 0.9 * clamp(y / (vh * 0.8), 0, 1)).toFixed(3);
+      drifts.forEach(function (d) {
+        var r = d.parentNode.getBoundingClientRect();
+        var off = clamp(r.top + r.height / 2 - vh / 2, -vh, vh);
+        d.style.transform = 'translate3d(0,' + (off * 0.12).toFixed(1) + 'px,0)';
+      });
+    }
+
+    fills.forEach(function (f) {
+      var r = f.el.getBoundingClientRect();
+      var prog = reduce ? 1 : clamp((vh * 0.85 - r.top) / (r.height + vh * 0.4), 0, 1);
+      var n = Math.ceil(prog * f.words.length);
+      if (n !== f.lit) {
+        for (var i = 0; i < f.words.length; i++) f.words[i].classList.toggle('on', i < n);
+        f.lit = n;
+      }
+    });
+
+    var dr = dawn.getBoundingClientRect();
+    var rise = clamp((vh * 0.95 - dr.top) / (vh * 0.7), 0, 1);
+    sun.style.setProperty('--rise', rise.toFixed(3));
+  }
+  function req() {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }
+  window.addEventListener('scroll', req, { passive: true });
+  window.addEventListener('resize', function () { sizeCanvas(); req(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(req);
+  sizeCanvas();
+  update();
+  if (!reduce) requestAnimationFrame(loop);
+
+  /* ---------- the question at dawn ---------- */
+  var btnMain = document.getElementById('btnMain');
+  var btnAlt = document.getElementById('btnAlt');
+  var reply = document.getElementById('reply');
+  var motes = document.getElementById('motes');
+  var labels = ['ไม่', 'ไม่อยาก', 'ไม่อยากได้'];
+  var msgs = ['ไม่เป็นไรครับ หามาให้เหมือนเดิม', 'โอเคครับ ผมรู้ว่าคุณชอบทิวลิป(ใช่ไหมนะ)'];
+  var step = 0, done = false;
+
+  function burst() {
+    if (reduce) return;
+    motes.textContent = '';
+    for (var i = 0; i < 28; i++) {
+      var s = document.createElement('span');
+      s.className = 'mote';
+      var a = -Math.PI + Math.random() * Math.PI;
+      var dist = 90 + Math.random() * 190;
+      s.style.setProperty('--dx', (Math.cos(a) * dist).toFixed(0) + 'px');
+      s.style.setProperty('--dy', (Math.sin(a) * dist).toFixed(0) + 'px');
+      s.style.setProperty('--sz', (4 + Math.random() * 6).toFixed(1) + 'px');
+      s.style.setProperty('--dl', (Math.random() * 0.25).toFixed(2) + 's');
+      s.style.setProperty('--mc', 'var(--m' + (1 + (i % 3)) + ')');
+      motes.appendChild(s);
+    }
+    setTimeout(function () { motes.textContent = ''; }, 2400);
+  }
+  function forgive() {
+    done = true;
+    reply.textContent = 'โอเครครับ ผมจะให้ตุ๊กตา';
+    btnMain.textContent = 'ขอบคุณครับ';
+    btnMain.disabled = true;
+    btnAlt.textContent = 'อ่านอีกรอบ';
+    burst();
+  }
+  btnMain.addEventListener('click', function () { if (!done) forgive(); });
+  btnAlt.addEventListener('click', function () {
+    if (done) {
+      window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+      return;
+    }
+    if (step >= labels.length - 1) { forgive(); return; }
+    reply.textContent = msgs[step];
+    step++;
+    btnAlt.textContent = labels[step];
+  });
+})();
+</script>
+
+</body>
+</html>
